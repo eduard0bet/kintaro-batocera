@@ -62,8 +62,8 @@ cd $TMP_DIR
 
 # Download files
 echo "Downloading files..."
-curl -sSL https://raw.githubusercontent.com/eduard0bet/kintaro-batocera/main/kintaro.py -o kintaro.py
-curl -sSL https://raw.githubusercontent.com/eduard0bet/kintaro-batocera/main/S31kintaro -o S31kintaro
+curl -sSL https://raw.githubusercontent.com/eduard0bet/kintaro-batocera/refs/heads/main/kintaro.py -o kintaro.py
+curl -sSL https://raw.githubusercontent.com/eduard0bet/kintaro-batocera/refs/heads/main/S31kintaro -o S31kintaro
 
 if [ ! -f kintaro.py ] || [ ! -f S31kintaro ]; then
     echo -e "${RED}Error downloading files${NC}"
