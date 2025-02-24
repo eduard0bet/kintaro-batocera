@@ -1,0 +1,1 @@
+echo '/userdata/system/custom.sh.d/S31kintaro start' >> /userdata/system/custom.sh

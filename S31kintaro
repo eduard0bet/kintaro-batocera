@@ -1,0 +1,150 @@
+#!/bin/bash
+#                                      ▄▄= _╓_
+#                                    ╓██▄▓██████▄_
+#                                   j██████████████▄
+#                                   ╫████████████▀"
+#                                   ╫█████████╙
+#                                 ,▄▓███████▓,
+#                               ▄██████████████▄
+#                              ª▀▀▀▀▀▀▀▀▀▀▀▀████H
+#                         _,▄▄▓▓██████████▓▓████Ñ
+#                     ,▄██████████████████████████▓▄_
+#                  _▄█████████████████████████████████▄_
+#                 ▄██████████████████████████████████████╓
+#               ╓█████████████^╟██████████████████████████▓_
+#              ╔█████████████  ▓████████████████████████████▄
+#             ╔█████▀▀▀╙╙""`   ````""╙╙▀▀▀████████████╕'█████▄
+#            ╓███,▄▄H                        └╙▀███████_▐█████╕
+#            ██████▌  ▄▓▀▀▄╓          _╓▄▄▄▄╖_    ╙╙███▌ ██████_
+#           ╫█████▌  ²╙  _ ╙▀       ▓▀╙"    '█H      _╙Ñ ▓█████▓
+#          ▐██████      ▓██_ ,,        ▄█▌_  ``      ╟█▄|███████▒
+#          ██████Ñ      `╙^_█╙╙▀▓▄    '███`          ╚███████████╕
+#         ╟██████          `"    `                   [████████████
+#        ╓██████▌     ▄▄▓█▓▀▀▀▀▀▀▓φ▄▄,_              [█████████████
+#        ▓██████▌      ╟███▄╓,_____,,╠███▓▄▄▄        j██████████████
+#       ║███████▌      '█████████████████▓           ▐███████████████╖
+#      ╓█████████_      `████╙"]█▀╙"'╙██╜            ║█████████████████▄
+#      ███████████_       ╙▓▄╓,╙`_,▄▓▀^              ╫█████████████```
+#     ▓████████████_         '╙╙╙╙"                 _██████████████▌
+#   _▓██████████████▄_     ª█      ,▄@            _▄████████████████H
+#  »▓█████▀▀▀▀▀███████▌,    ╙▀▓▓▓▀▀╙`          _▄▓▀`╫████████▀╙▀▀▀▀██_
+#              ╚█████▀╙╙▀▓▄,__           _,,▄▓▀▀"  ,██████▀"
+# Copyright 2016 Kintaro Co.                                                                                                                                                     
+# Copyright 2025 Eduardo Betancourt
+# Kintaro Controller service script for Batocera
+
+PYTHON="/usr/bin/python3"
+SCRIPT="/userdata/system/kintaro/kintaro.py"
+LOGFILE="/tmp/kintaro.log"
+PIDFILE="/tmp/kintaro.pid"
+
+# Set up GPIO permissions
+setup_gpio() {
+    # Make gpiomem accessible
+    if [ -e /dev/gpiomem ]; then
+        chmod 666 /dev/gpiomem
+        echo "GPIO permissions set"
+    else
+        echo "GPIO device not found"
+        return 1
+    fi
+    return 0
+}
+
+start() {
+    echo "Starting Kintaro Controller"
+    
+    # Check if already running
+    if [ -f "$PIDFILE" ]; then
+        PID=$(cat "$PIDFILE")
+        if kill -0 $PID 2>/dev/null; then
+            echo "Already running with PID $PID"
+            return 1
+        else
+            # Stale PID file
+            rm "$PIDFILE"
+        fi
+    fi
+    
+    # Set up GPIO permissions first
+    setup_gpio
+    
+    # Start the controller
+    $PYTHON $SCRIPT &
+    PID=$!
+    echo $PID > "$PIDFILE"
+    echo "Started with PID $PID"
+    
+    return 0
+}
+
+stop() {
+    echo "Stopping Kintaro Controller"
+    
+    if [ -f "$PIDFILE" ]; then
+        PID=$(cat "$PIDFILE")
+        kill $PID 2>/dev/null
+        rm "$PIDFILE"
+        echo "Stopped PID $PID"
+    else
+        # Fallback method
+        pkill -f "$SCRIPT"
+        echo "Stopped all Kintaro Controller processes"
+    fi
+    
+    return 0
+}
+
+restart() {
+    stop
+    sleep 2
+    start
+}
+
+status() {
+    if [ -f "$PIDFILE" ]; then
+        PID=$(cat "$PIDFILE")
+        if kill -0 $PID 2>/dev/null; then
+            echo "Running with PID $PID"
+            return 0
+        else
+            echo "Not running (stale PID file)"
+            return 1
+        fi
+    else
+        echo "Not running"
+        return 3
+    fi
+}
+
+logs() {
+    if [ -f "$LOGFILE" ]; then
+        tail -n 20 "$LOGFILE"
+    else
+        echo "Log file not found"
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    logs)
+        logs
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status|logs}"
+        exit 1
+        ;;
+esac
+
+exit 0
