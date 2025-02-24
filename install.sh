@@ -52,10 +52,6 @@ if ! grep -q "Raspberry Pi" /proc/cpuinfo; then
     exit 1
 fi
 
-# Mount system in write mode (different for Batocera)
-echo "Setting up system..."
-mount -o remount,rw /
-
 # Create temporary directory
 TMP_DIR=$(mktemp -d)
 cd $TMP_DIR
